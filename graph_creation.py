@@ -23,9 +23,19 @@ import copy
 import os.path as osp
 from pprint import pprint
 
+def y_label_maker(graph:nx.Graph) -> nx.Graph:
+    '''
+    This function creates the y labels for the nodes in the graph.
+    '''
+    y = []
+    for community_label, community in enumerate(G.graph["partition"], start=1):
+        y.extend([community_label] * len(community))
 
+    nx.set_node_attributes(G, {i: {'y': label} for i, label in enumerate(y)})
 
-def graph_with_communities_generator(num_of_communities:int = 10, nodes_per_community:int = 10, probs = None, save_to_file:bool= True) -> nx.Graph:
+    return graph
+
+def graph_with_communities_generator_sb(num_of_communities:int = 10, nodes_per_community:int = 10, probs = None, save_to_file:bool= False) -> nx.Graph:
     '''
     This function generates a graph with communities using the stochastic block model.
     '''
@@ -94,4 +104,3 @@ def graph_with_hierarchy_generator(r:int = 3, h:int = 3, extra_edges:bool = True
         graph_dfs.add_edges_from(extra_edges)
 
     return graph_dfs
-

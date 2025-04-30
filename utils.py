@@ -3,6 +3,8 @@ import torch_geometric
 from torch_geometric.data import Data,Dataset
 from torch_geometric.utils import from_networkx, to_networkx
 
+from networkx.algorithms.community.modularity_max import greedy_modularity_communities
+
 from torch_geometric.nn import Node2Vec
 from torch_geometric.datasets import Planetoid
 
@@ -47,7 +49,21 @@ def set_seeds_and_device():
 
     return device
 
-def nx_to_pytorch_data_converter(g):
+def y_attribute_checker(graph:nx.Graph) -> bool:
+    '''
+    This function checks if the y attribute is present in the graph.
+    '''
+    if not isinstance(graph, nx.Graph):
+        raise TypeError("Input must be a networkx graph object")
+    
+    # Check if 'y' attribute exists for all nodes
+    for node in graph.nodes():
+        if 'y' not in graph.nodes[node]:
+            print(f"Node {node} does not have 'y' attribute.")
+            return False
+    return True
+
+def nx_to_pytorch_data_converter(g:nx.Graph) -> Data:
     '''
     This function converts a networkx graph to a pytorch geometric graph.
     TODO: vice versa?
@@ -57,16 +73,18 @@ def nx_to_pytorch_data_converter(g):
 
     # y = torch.tensor([g.nodes[node]['y'] for node in g.nodes], dtype=torch.long)
     # g.graph["num_classes"] = len(set(y.numpy()))
+    
+    # TODO: collect all node attributes and add them to the data object
+    data = from_networkx(g, group_node_attrs = ['y']) 
 
-    data = from_networkx(g, group_node_attrs = ['y'])
-
-    if not hasattr(data, 'y') or data.y is None:
-        print("Warning: 'y' attribute not found or is None after from_networkx. Attempting manual extraction.")
-        try:
-            y_values = [g.nodes[node]['y'] for node in g.nodes()]
-            data.y = torch.tensor(y_values, dtype=torch.long)
-        except KeyError:
-            raise AttributeError("Failed to manually extract 'y' attribute. Check node data in NetworkX graph.")
+    if y_attribute_checker(g) == True:
+        # Check if 'y' attribute exists in the graph
+        y = torch.tensor([g.nodes[node]['y'] for node in g.nodes], dtype=torch.long)
+        data.y = y
+    else:
+        # If 'y' attribute is not found, raise an error or handle it accordingly
+        raise AttributeError("The 'y' attribute is missing for some nodes in the graph.")
+    
     return data
 
 def create_masks(data, train_ratio=0.7):
@@ -90,3 +108,42 @@ def params_to_string(params: dict) -> str:
     "param1name_param1value_param2name_param2value..."
     """
     return "_".join(f"{k}_{v}" for k, v in params.items())
+
+def add_greedy_modularity_labels_nx(G: nx.Graph) -> nx.Graph:
+    """
+    Adds node labels ('y' attribute) to a NetworkX graph based on
+    communities found using the greedy modularity maximization algorithm.
+
+    Args:
+        G (nx.Graph): The input NetworkX graph.
+
+    Returns:
+        nx.Graph: The input graph with the 'y' node attribute added,
+                  containing community labels for each node.
+                  Returns the original graph if community detection fails.
+    """
+    if not isinstance(G, nx.Graph):
+        print("Error: Input must be a NetworkX Graph object.")
+        return G
+
+    try:
+        # Find communities using greedy modularity maximization
+        # Ensure the graph is undirected for the algorithm if necessary
+        # If your graph might be directed, consider converting: G_undirected = G.to_undirected()
+        communities = greedy_modularity_communities(G) # Use G or G_undirected
+
+        # Create a partition dictionary mapping node to community ID
+        partition = {}
+        for i, community_nodes in enumerate(communities):
+            for node in community_nodes:
+                partition[node] = i # Assign community index as label
+
+        # Set the 'y' attribute on the NetworkX graph nodes
+        nx.set_node_attributes(G, partition, 'y')
+        print(f"Successfully added 'y' attribute to NetworkX graph with {len(communities)} communities found.")
+
+    except Exception as e:
+        print(f"An error occurred during label creation: {e}")
+        # Optionally return original graph or raise error
+
+    return G
