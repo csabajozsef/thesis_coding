@@ -112,7 +112,7 @@ def print_graph_info_basic(data: Data|Dataset|nx.Graph)->None:
     except AttributeError as e:
         print(f"AttributeError: {e}")
 
-def print_graph_info_cluster(graph:nx.Graph|str) -> None:
+def print_graph_info_cluster(graph:nx.Graph|str, print_text:bool = False) -> None:
     '''
     This function performs graph analytics on the given graph. 
     '''
@@ -120,17 +120,23 @@ def print_graph_info_cluster(graph:nx.Graph|str) -> None:
         assert graph.endswith(".gpickle"), "Graph file must be in .gpickle format"
         with open(graph, "rb") as f:
             G = pickle.load(graph)
-        print(f"Graph loaded from {graph}")
+        if print_text:
+            print(f"Graph loaded from {graph}")
     elif isinstance(graph, Data):
         G = nx.from_pyg_data(graph)
-        print(f"Graph loaded from {graph}")
+        if print_text:
+            print(f"Graph loaded from {graph}")
     elif isinstance(graph, nx.Graph):
         G = graph
-        print(f"Graph loaded from {graph}")
+        if print_text:
+            print(f"Graph loaded from {graph}")
     else:
         raise ValueError("Graph must be a networkx graph object or a file path to a .gpickle file")        
 
+    print()
+    print("----------Basic graph information-----------")
     print_graph_info_basic(G)
+    # print()
     graph_stats = {}
 
     # Calculate the number of connected components
@@ -142,9 +148,8 @@ def print_graph_info_cluster(graph:nx.Graph|str) -> None:
     # Initialize dictionary for statistics and timing
     
     # Time each statistic calculation
-    graph_stats["Number of nodes"] = G.number_of_nodes()
-    
-    graph_stats["Number of edges"] = G.number_of_edges()
+    # graph_stats["Number of nodes"] = G.number_of_nodes()
+    # graph_stats["Number of edges"] = G.number_of_edges()
     
     start_time = time.time()
     graph_stats["Average Clustering Coefficient"] = nx.average_clustering(G)
@@ -166,12 +171,13 @@ def print_graph_info_cluster(graph:nx.Graph|str) -> None:
         "Components calculation": cc_time
     }
 
-    print("Graph statistics:")
+    print("----------Graph extra statistics-----------")
     for k, v in graph_stats.items():
         print(f"{k}: {v}")
         # print(f"Time taken: {graph_stats[k]} seconds")
         # # plot?
         # print("\n")
+    print()
 
 def pyg_graph_data_visualizer(data: Data|Dataset)->None:
     """

@@ -4,7 +4,6 @@ import torch
 import torch_geometric
 from torch_geometric.data import Data,Dataset
 from torch_geometric.utils import from_networkx, to_networkx
-from networkx.algorithms.community.modularity_max import greedy_modularity_communities
 
 from torch_geometric.nn import Node2Vec
 from torch_geometric.datasets import Planetoid
@@ -140,7 +139,7 @@ def test_n2v(model, data):
                      max_iter=150)
     return acc
 
-def model_training_n2v(model, model_init_params, data, loader, optimizer, num_epochs, device, model_save_path='node2vec_best_model_00'):
+def model_training_n2v(model, model_init_params, data, loader, optimizer, num_epochs, device, all_plots:bool = False,model_save_path='node2vec_best_model_00'):
     """
     Trains the Node2Vec model, saves the best state, and plots metrics.
 
@@ -229,20 +228,21 @@ def model_training_n2v(model, model_init_params, data, loader, optimizer, num_ep
     axs[0].grid(True)
     axs[0].legend()
 
-    # Plot Accuracy
-    axs[1].plot(range(1, num_epochs + 1), accuracies, marker='o', linestyle='-', color='r', label='Accuracy')
-    axs[1].set_ylabel('Test Accuracy')
-    axs[1].set_title('Test Accuracy per Epoch')
-    axs[1].grid(True)
-    axs[1].legend()
+    if all_plots:
+        # Plot Accuracy
+        axs[1].plot(range(1, num_epochs + 1), accuracies, marker='o', linestyle='-', color='r', label='Accuracy')
+        axs[1].set_ylabel('Test Accuracy')
+        axs[1].set_title('Test Accuracy per Epoch')
+        axs[1].grid(True)
+        axs[1].legend()
 
-    # Plot Time
-    axs[2].plot(range(1, num_epochs + 1), epoch_times, marker='o', linestyle='-', color='g', label='Epoch Duration')
-    axs[2].set_xlabel('Epoch')
-    axs[2].set_ylabel('Time (seconds)')
-    axs[2].set_title('Epoch Duration')
-    axs[2].grid(True)
-    axs[2].legend()
+        # Plot Time
+        axs[2].plot(range(1, num_epochs + 1), epoch_times, marker='o', linestyle='-', color='g', label='Epoch Duration')
+        axs[2].set_xlabel('Epoch')
+        axs[2].set_ylabel('Time (seconds)')
+        axs[2].set_title('Epoch Duration')
+        axs[2].grid(True)
+        axs[2].legend()
 
     plt.tight_layout()
     plt.show()
@@ -259,45 +259,6 @@ def model_training_n2v(model, model_init_params, data, loader, optimizer, num_ep
         model.load_state_dict(best_model_state)
 
     return best_model_state, history
-
-def add_greedy_modularity_labels_nx(G: nx.Graph) -> nx.Graph:
-    """
-    Adds node labels ('y' attribute) to a NetworkX graph based on
-    communities found using the greedy modularity maximization algorithm.
-
-    Args:
-        G (nx.Graph): The input NetworkX graph.
-
-    Returns:
-        nx.Graph: The input graph with the 'y' node attribute added,
-                  containing community labels for each node.
-                  Returns the original graph if community detection fails.
-    """
-    if not isinstance(G, nx.Graph):
-        print("Error: Input must be a NetworkX Graph object.")
-        return G
-
-    try:
-        # Find communities using greedy modularity maximization
-        # Ensure the graph is undirected for the algorithm if necessary
-        # If your graph might be directed, consider converting: G_undirected = G.to_undirected()
-        communities = greedy_modularity_communities(G) # Use G or G_undirected
-
-        # Create a partition dictionary mapping node to community ID
-        partition = {}
-        for i, community_nodes in enumerate(communities):
-            for node in community_nodes:
-                partition[node] = i # Assign community index as label
-
-        # Set the 'y' attribute on the NetworkX graph nodes
-        nx.set_node_attributes(G, partition, 'y')
-        print(f"Successfully added 'y' attribute to NetworkX graph with {len(communities)} communities found.")
-
-    except Exception as e:
-        print(f"An error occurred during label creation: {e}")
-        # Optionally return original graph or raise error
-
-    return G
 
 def create_parameters_dict() -> dict:
     """

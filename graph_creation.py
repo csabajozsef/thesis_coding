@@ -28,20 +28,21 @@ def y_label_maker(graph:nx.Graph) -> nx.Graph:
     This function creates the y labels for the nodes in the graph.
     '''
     y = []
-    for community_label, community in enumerate(G.graph["partition"], start=1):
+    for community_label, community in enumerate(graph.graph["partition"], start=1):
         y.extend([community_label] * len(community))
 
-    nx.set_node_attributes(G, {i: {'y': label} for i, label in enumerate(y)})
+    nx.set_node_attributes(graph, {i: {'y': label} for i, label in enumerate(y)})
 
     return graph
 
-def graph_with_communities_generator_sb(num_of_communities:int = 10, nodes_per_community:int = 10, probs = None, save_to_file:bool= False) -> nx.Graph:
+def graph_with_communities_generator_sb(num_of_communities:int = 10, nodes_per_community:int = 10, probs = None, save_to_file:bool= False, print_text:bool = True) -> nx.Graph:
     '''
     This function generates a graph with communities using the stochastic block model.
     '''
     if probs is None:
         # Default: High intra-community probability, low inter-community probability
-        print(" => Using default probabilities")
+        if print_text:
+            print(" => Using default probabilities in the stochastic block model")
         probs = np.full((num_of_communities, num_of_communities), 0.01)
         np.fill_diagonal(probs, 0.5)
     
@@ -75,7 +76,7 @@ def graph_with_communities_generator_sb(num_of_communities:int = 10, nodes_per_c
         print(f" => Graph saved to {path}")
     return G   
 
-def graph_with_hierarchy_generator(r:int = 3, h:int = 3, extra_edges:bool = True) -> nx.Graph:
+def graph_with_hierarchy_generator(r:int = 3, h:int = 3, extra_edges:bool = True, print_text:bool = True) -> nx.Graph:
     '''
     This funtion generates a graph with a hierarchy.
     '''
@@ -87,7 +88,8 @@ def graph_with_hierarchy_generator(r:int = 3, h:int = 3, extra_edges:bool = True
 
         # Assign class labels based on depth-level (1, 2, 3...)
     y = {}
-    print(len(graph_dfs.nodes()))
+    if print_text:
+        print(len(graph_dfs.nodes()))
 
     for node in graph_dfs.nodes():
         depth = nx.shortest_path_length(graph_dfs, source=0, target=node)
