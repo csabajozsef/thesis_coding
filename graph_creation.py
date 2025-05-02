@@ -74,6 +74,7 @@ def graph_with_communities_generator_sb(num_of_communities:int = 10, nodes_per_c
         with open(path, "wb") as f:
             pickle.dump(G, f)
         print(f" => Graph saved to {path}")
+    G.graph["creation_function"] = "graph_with_communities_generator_sb"
     return G   
 
 def graph_with_hierarchy_generator(r:int = 3, h:int = 3, extra_edges:bool = True, print_text:bool = True) -> nx.Graph:
@@ -105,4 +106,48 @@ def graph_with_hierarchy_generator(r:int = 3, h:int = 3, extra_edges:bool = True
                 extra_edges.append((i, i+1))
         graph_dfs.add_edges_from(extra_edges)
 
+    graph_dfs.graph["creation_function"] = "graph_with_hierarchy_generator"
     return graph_dfs
+
+# Hierarchical Graph Generator
+def hierarchical_graph(branching_factors=[5,3,2], noise_edges=0.02, directed=False, weighted=False):
+    G = nx.DiGraph() if directed else nx.Graph()
+
+    current_level_nodes = [0]
+    G.add_node(0)
+    next_node_id = 1
+
+    # Create multi-level hierarchy
+    for level, b in enumerate(branching_factors):
+        next_level_nodes = []
+        for parent in current_level_nodes:
+            children = range(next_node_id, next_node_id + b)
+            G.add_edges_from((parent, child) for child in children)
+            next_level_nodes.extend(children)
+            next_node_id += b
+        current_level_nodes = next_level_nodes
+
+    # Adding sparse noise edges
+    total_possible_edges = len(G.nodes()) * (len(G.nodes()) - 1) / 2
+    extra_edges = int(noise_edges * total_possible_edges)
+    while extra_edges > 0:
+        u, v = np.random.choice(G.nodes(), 2, replace=False)
+        if not G.has_edge(u, v):
+            G.add_edge(u, v)
+            extra_edges -= 1
+
+    # Add hierarchical labels (node depth)
+    depth_labels = nx.shortest_path_length(G, source=0)
+    nx.set_node_attributes(G, depth_labels, 'y')
+
+    # Optional: set edge weights
+    if weighted:
+        for u, v in G.edges():
+            G[u][v]['weight'] = 1 / (1 + depth_labels[v])  # Decreasing weight from root
+
+    return G
+
+def create_hierarchical_graph_new(branching_factors=[5,3,2], noise_edges=0.02, directed=False, weighted=False):
+    G = hierarchical_graph(branching_factors, noise_edges, directed, weighted)
+    G.graph["creation_function"] = "create_hierarchical_graph_new"
+    return G

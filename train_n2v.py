@@ -34,8 +34,10 @@ from pprint import pprint
 device = set_seeds_and_device()
 parameter_dicts = create_parameters_dict()
 
-def train_node2vecs(data_list:list, parameter_dicts = parameter_dicts, device = device):
+def train_node2vecs(data_list:list, num_training_epochs:int = 6, parameter_dicts = parameter_dicts, device = device):
     
+    # TODO: for loop for parameter_dicts - prep for hyperparameter tuning - how to score?
+
     for data in data_list:
         for key, value in parameter_dicts.items():
             print(f"Running with {key} = {value}")
@@ -43,7 +45,7 @@ def train_node2vecs(data_list:list, parameter_dicts = parameter_dicts, device = 
             model = model_init(value,data)
             
             loader, optimizer = set_loader_and_optimizer(model)
-            num_training_epochs = 6 # Or 201, etc.
+            num_training_epochs = num_training_epochs # Or 201, etc.
 
             best_state, training_history = model_training_n2v(
                 model,

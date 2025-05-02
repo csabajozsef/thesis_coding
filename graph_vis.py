@@ -100,6 +100,8 @@ def print_graph_info_basic(data: Data|Dataset|nx.Graph)->None:
         elif isinstance(data, nx.Graph):
             print("Type: ",type(data))
             print(data)
+            if data.graph["creation_function"] is not None:
+                print("Graph creation function: ",data.graph["creation_function"])
             print("Number of nodes: ",data.number_of_nodes())
             print("Number of edges: ",data.number_of_edges())
             print("Average node degree: ",np.mean([d for n, d in data.degree()]))
@@ -154,6 +156,10 @@ def print_graph_info_cluster(graph:nx.Graph|str, print_text:bool = False) -> Non
     start_time = time.time()
     graph_stats["Average Clustering Coefficient"] = nx.average_clustering(G)
     clustering_time = time.time() - start_time
+
+    start_time = time.time()
+    graph_stats["Transitivity/Global clustering coeff"] = nx.transitivity(G)
+    transitivity_time = time.time() - start_time
     
     start_time = time.time()
     graph_stats["Average Shortest Path (Largest Component)"] = nx.average_shortest_path_length(largest_cc)
@@ -168,7 +174,8 @@ def print_graph_info_cluster(graph:nx.Graph|str, print_text:bool = False) -> Non
     bfs_stat_times = {
         "Clustering calculation": clustering_time,
         "Path length calculation": path_time,
-        "Components calculation": cc_time
+        "Components calculation": cc_time,
+        "Transitivity calculation": transitivity_time
     }
 
     print("----------Graph extra statistics-----------")

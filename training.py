@@ -139,7 +139,7 @@ def test_n2v(model, data):
                      max_iter=150)
     return acc
 
-def model_training_n2v(model, model_init_params, data, loader, optimizer, num_epochs, device, all_plots:bool = False,model_save_path='node2vec_best_model_00'):
+def model_training_n2v(model, model_init_params, data, loader, optimizer, num_epochs, device, all_plots:bool = False, model_save_path='node2vec_best_model_00'):
     """
     Trains the Node2Vec model, saves the best state, and plots metrics.
 
@@ -219,18 +219,30 @@ def model_training_n2v(model, model_init_params, data, loader, optimizer, num_ep
     print(f"Best model state saved to '{model_save_path}'")
 
     # --- Plotting ---
-    fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
-
-    # Plot Loss
-    axs[0].plot(range(1, num_epochs + 1), losses, marker='o', linestyle='-', label='Loss')
-    axs[0].set_ylabel('Average Loss')
-    axs[0].set_title('Training Loss per Epoch')
-    axs[0].grid(True)
-    axs[0].legend()
+    # Get p and q values for color logic
+    p_val = model_init_params.get('p', None)
+    q_val = model_init_params.get('q', None)
+    
+    if (q_val is not None and p_val is not None and q_val > p_val):
+        acc_color = 'b' 
+    elif (p_val is not None and q_val is not None and p_val > q_val):
+        acc_color = 'r'
+    else:
+        acc_color = 'g'
+        
 
     if all_plots:
+        fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
+
+        # Plot Loss
+        axs[0].plot(range(1, num_epochs + 1), losses, marker='o', linestyle='-', label='Loss')
+        axs[0].set_ylabel('Average Loss')
+        axs[0].set_title('Training Loss per Epoch')
+        axs[0].grid(True)
+        axs[0].legend()
+
         # Plot Accuracy
-        axs[1].plot(range(1, num_epochs + 1), accuracies, marker='o', linestyle='-', color='r', label='Accuracy')
+        axs[1].plot(range(1, num_epochs + 1), accuracies, marker='o', linestyle='-', color=acc_color, label='Accuracy')
         axs[1].set_ylabel('Test Accuracy')
         axs[1].set_title('Test Accuracy per Epoch')
         axs[1].grid(True)
@@ -243,6 +255,22 @@ def model_training_n2v(model, model_init_params, data, loader, optimizer, num_ep
         axs[2].set_title('Epoch Duration')
         axs[2].grid(True)
         axs[2].legend()
+    else:
+        fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+        ax.plot(range(1, num_epochs + 1), accuracies, marker='o', linestyle='-', color=acc_color, label='Accuracy')
+        ax.set_ylabel('Test Accuracy')
+        ax.set_xlabel('Epoch')
+        ax.set_title('Test Accuracy per Epoch')
+        ax.grid(True)
+        
+        # Add dataset name to the legend as a separate entry
+        dataset_name = getattr(data, 'creation_function', 'Unknown')
+        ax.plot([], [], ' ', label=f"Dataset: {dataset_name}")
+
+        # Add p and q to the legend as a separate entry
+        pq_text = f"p = {p_val}, q = {q_val}"
+        ax.plot([], [], ' ', label=pq_text)  # Invisible plot for legend entry
+        ax.legend()
 
     plt.tight_layout()
     plt.show()
@@ -260,7 +288,58 @@ def model_training_n2v(model, model_init_params, data, loader, optimizer, num_ep
 
     return best_model_state, history
 
-def create_parameters_dict() -> dict:
+def create_parameters_dict(
+    p_range=[0.5, 1, 2, 5],  # [start, stop, step] for p (default: 1, 101, 100)
+    q_range=[0.5, 1, 2, 5],  # [start, stop, step] for q (default: 1, 101, 100)
+    base_params=None,
+    range_mode: bool = False
+) -> dict:
+    """
+    Generates a dict of dicts of parameter sets for grid search over p and q.
+
+    Args:
+        p_range (list): If range_mode is True, [start, stop, step] for p values (inclusive of start, exclusive of stop).
+                        If range_mode is False, a list of p values to use directly.
+        q_range (list): If range_mode is True, [start, stop, step] for q values (inclusive of start, exclusive of stop).
+                        If range_mode is False, a list of q values to use directly.
+        base_params (dict): Base parameters to use for all sets (except p and q).
+        range_mode (bool): If True, use range(start, stop, step). If False, treat p_range and q_range as value lists.
+
+    Returns:
+        dict: Dictionary where keys are 'p={p}_q={q}' and values are parameter dicts.
+    """
+    if base_params is None:
+        base_params = {
+            "embedding_dim": 128,
+            "walk_length": 70,
+            "context_size": 14,
+            "walks_per_node": 18,
+            "num_negative_samples": 1,
+            "sparse": True
+        }
+
+    if range_mode:
+        p_values = list(range(p_range[0], p_range[1], p_range[2]))
+        q_values = list(range(q_range[0], q_range[1], q_range[2]))
+    else:
+        p_values = list(p_range)
+        q_values = list(q_range)
+
+    print(f"p_values: {p_values}")
+    print(f"q_values: {q_values}")
+
+    parameter_dicts = {}
+    for p in p_values:
+        for q in q_values:
+            params = base_params.copy()
+            params['p'] = p
+            params['q'] = q
+            key = f"p={p}_q={q}"
+            parameter_dicts[key] = params
+
+    return parameter_dicts
+
+def create_parameters_dict_old() -> dict:
     """
     Converts a dictionary of parameters into a string format for easy saving.
 
