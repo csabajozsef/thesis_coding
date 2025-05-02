@@ -289,8 +289,8 @@ def model_training_n2v(model, model_init_params, data, loader, optimizer, num_ep
     return best_model_state, history
 
 def create_parameters_dict(
-    p_range=[0.5, 1, 2, 5],  # [start, stop, step] for p (default: 1, 101, 100)
-    q_range=[0.5, 1, 2, 5],  # [start, stop, step] for q (default: 1, 101, 100)
+    p_range=[1, 2],  # [0.5, 1, 2, 5]
+    q_range=[1, 2],  # [start, stop, step] for q (default: 1, 101, 100)
     base_params=None,
     range_mode: bool = False
 ) -> dict:
@@ -308,6 +308,8 @@ def create_parameters_dict(
     Returns:
         dict: Dictionary where keys are 'p={p}_q={q}' and values are parameter dicts.
     """
+    skip_equal = True  # Set to True if you want to skip equal p and q values
+
     if base_params is None:
         base_params = {
             "embedding_dim": 128,
@@ -331,6 +333,9 @@ def create_parameters_dict(
     parameter_dicts = {}
     for p in p_values:
         for q in q_values:
+            if skip_equal:
+                if p == q:
+                    continue  # Skip if p and q are equal
             params = base_params.copy()
             params['p'] = p
             params['q'] = q
