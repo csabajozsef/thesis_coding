@@ -100,7 +100,7 @@ def print_graph_info_basic(data: Data|Dataset|nx.Graph)->None:
         elif isinstance(data, nx.Graph):
             print("Type: ",type(data))
             print(data)
-            if data.graph["creation_function"] is not None:
+            if data.graph.get("creation_function"):
                 print("Graph creation function: ",data.graph["creation_function"])
             print("Number of nodes: ",data.number_of_nodes())
             print("Number of edges: ",data.number_of_edges())
@@ -125,7 +125,9 @@ def print_graph_info_cluster(graph:nx.Graph|str, print_text:bool = False) -> Non
         if print_text:
             print(f"Graph loaded from {graph}")
     elif isinstance(graph, Data):
-        G = nx.from_pyg_data(graph)
+        # G = nx.from_pyg_data(graph)
+        print("lol")
+        G = to_networkx(graph)
         if print_text:
             print(f"Graph loaded from {graph}")
     elif isinstance(graph, nx.Graph):
@@ -142,32 +144,58 @@ def print_graph_info_cluster(graph:nx.Graph|str, print_text:bool = False) -> Non
     graph_stats = {}
 
     # Calculate the number of connected components
-    num_connected_components = nx.number_connected_components(G)
-    graph_stats["Number of connected components"] = num_connected_components
+    try:
+        if not G.is_directed():
+            num_connected_components = nx.number_connected_components(G)
+            graph_stats["Number of connected components"] = num_connected_components
 
-    largest_cc = G.subgraph(max(nx.connected_components(G), key=len))
-    graph_stats["Number of nodes in largest component"] = largest_cc.number_of_nodes()
+            largest_cc = G.subgraph(max(nx.connected_components(G), key=len))
+            graph_stats["Number of nodes in largest component"] = largest_cc.number_of_nodes()
+        else:
+            print("Warning: Connected components and largest component stats not available for directed graphs.")
+            graph_stats["Number of connected components"] = "N/A (directed graph)"
+            graph_stats["Number of nodes in largest component"] = "N/A (directed graph)"
+    except Exception as e:
+        print(f"Error calculating connected components: {e}")
+        graph_stats["Number of connected components"] = "Error"
+        graph_stats["Number of nodes in largest component"] = "Error"
     # Initialize dictionary for statistics and timing
     
     # Time each statistic calculation
     # graph_stats["Number of nodes"] = G.number_of_nodes()
     # graph_stats["Number of edges"] = G.number_of_edges()
     
-    start_time = time.time()
-    graph_stats["Average Clustering Coefficient"] = nx.average_clustering(G)
-    clustering_time = time.time() - start_time
+    try:
+        start_time = time.time()
+        graph_stats["Average Clustering Coefficient"] = nx.average_clustering(G)
+        clustering_time = time.time() - start_time
+    except Exception as e:
+        print(f"Error calculating Average Clustering Coefficient: {e}")
+        clustering_time = None
 
-    start_time = time.time()
-    graph_stats["Transitivity/Global clustering coeff"] = nx.transitivity(G)
-    transitivity_time = time.time() - start_time
-    
-    start_time = time.time()
-    graph_stats["Average Shortest Path (Largest Component)"] = nx.average_shortest_path_length(largest_cc)
-    path_time = time.time() - start_time
-    
-    start_time = time.time()
-    graph_stats["Number of Connected Components"] = nx.number_connected_components(G)
-    cc_time = time.time() - start_time
+    try:
+        start_time = time.time()
+        graph_stats["Transitivity/Global clustering coeff"] = nx.transitivity(G)
+        transitivity_time = time.time() - start_time
+    except Exception as e:
+        print(f"Error calculating Transitivity/Global clustering coeff: {e}")
+        transitivity_time = None
+
+    try:
+        start_time = time.time()
+        graph_stats["Average Shortest Path (Largest Component)"] = nx.average_shortest_path_length(largest_cc)
+        path_time = time.time() - start_time
+    except Exception as e:
+        print(f"Error calculating Average Shortest Path (Largest Component): {e}")
+        path_time = None
+
+    try:
+        start_time = time.time()
+        graph_stats["Number of Connected Components"] = nx.number_connected_components(G)
+        cc_time = time.time() - start_time
+    except Exception as e:
+        print(f"Error calculating Number of Connected Components: {e}")
+        cc_time = None
      # Store timing information
     
     bfs_stat_times = {}

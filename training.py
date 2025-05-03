@@ -60,12 +60,12 @@ def save_model(model: torch.nn.Module, filename: str) -> None:
         filename = f"model_{filename}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pth"
     torch.save(model.state_dict(), filename)
 
-def load_dataset_cora(dataset = 'Cora'): 
+def load_dataset(dataset = 'Cora'): 
     dataset = 'Cora'
     path = osp.join('.', 'training_data', 'datasets', dataset)
     dataset = Planetoid(path, dataset)
     data = dataset[0]
-    return data
+    return dataset,data
 
 def set_loader_and_optimizer(model):
     loader = model.loader(batch_size=128, shuffle=True, num_workers=0) 
@@ -354,6 +354,8 @@ def create_parameters_dict_old() -> dict:
     Returns:
         dict: Dictionary with string keys and values.
     """
+    #  d = 128, r = 10, l = 80, k = 10
+    # pq in {0.25, 0.50, 1, 2, 4}
 
     model_init_params_q = { # close, bfs
     "embedding_dim": 128,
