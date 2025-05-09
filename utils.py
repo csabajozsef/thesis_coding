@@ -85,6 +85,9 @@ def nx_to_pytorch_data_converter(g:nx.Graph) -> Data:
         # If 'y' attribute is not found, raise an error or handle it accordingly
         raise AttributeError("The 'y' attribute is missing for some nodes in the graph.")
     
+    if g.graph["creation_function"] is not None:
+        data.creation_function = g.graph["creation_function"]
+
     return data
 
 def create_masks(data, train_ratio=0.7):
@@ -102,12 +105,22 @@ def create_masks(data, train_ratio=0.7):
     data.test_mask = test_mask
     return data
 
-def params_to_string(params: dict) -> str:
+def params_to_string(params: dict, acc = None) -> str:
     """
     Converts a dictionary of parameters to a string in the format:
     "param1name_param1value_param2name_param2value..."
     """
-    return "_".join(f"{k}_{v}" for k, v in params.items())
+    string_to_return = "_".join(f"{k}_{v}" for k, v in params.items())
+    
+    if acc is not None:
+        string_to_return += "_"+str(acc)
+        # add acc to string
+    
+    return string_to_return
+
+def get_best_acc_from_models(params: dict):
+    
+    pass
 
 def add_greedy_modularity_labels_nx(G: nx.Graph) -> nx.Graph:
     """
