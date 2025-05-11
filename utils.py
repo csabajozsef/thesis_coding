@@ -84,8 +84,8 @@ def nx_to_pytorch_data_converter(g:nx.Graph) -> Data:
     else:
         # If 'y' attribute is not found, raise an error or handle it accordingly
         raise AttributeError("The 'y' attribute is missing for some nodes in the graph.")
-    
-    if g.graph["creation_function"] is not None:
+    creation_func = g.graph.get("creation_function", None)
+    if creation_func is not None:
         data.creation_function = g.graph["creation_function"]
 
     return data
@@ -105,16 +105,25 @@ def create_masks(data, train_ratio=0.7):
     data.test_mask = test_mask
     return data
 
-def params_to_string(params: dict, acc = None) -> str:
+def file_name_generator(params: dict, model_name:str = None, dataset:str = None, acc = None) -> str:
     """
     Converts a dictionary of parameters to a string in the format:
     "param1name_param1value_param2name_param2value..."
     """
-    string_to_return = "_".join(f"{k}_{v}" for k, v in params.items())
+    string_to_return = ""
+
+    if model_name is not None:
+        string_to_return += model_name
+
+    if dataset is not None:
+        string_to_return += "_" + str(dataset) + "_"
+    
+    string_to_return += "_".join(f"{k}_{v}" for k, v in params.items())
     
     if acc is not None:
-        string_to_return += "_"+str(acc)
+        string_to_return += "_acc" + "_"+str(acc)
         # add acc to string
+        # add dataset to string
     
     return string_to_return
 
@@ -122,7 +131,7 @@ def get_best_acc_from_models(params: dict):
     
     pass
 
-def add_greedy_modularity_labels_nx(G: nx.Graph) -> nx.Graph:
+def add_greedy_modularity_labels(G: nx.Graph) -> nx.Graph:
     """
     Adds node labels ('y' attribute) to a NetworkX graph based on
     communities found using the greedy modularity maximization algorithm.
@@ -160,3 +169,29 @@ def add_greedy_modularity_labels_nx(G: nx.Graph) -> nx.Graph:
         # Optionally return original graph or raise error
 
     return G
+
+def add_louvain_community_labels(graph: nx.Graph) -> nx.Graph:
+    """
+    Detects communities using the Louvain method and sets the 'y' node attribute
+    to the community number for each node.
+    Returns the modified graph.
+    """
+    try:
+        from networkx.algorithms.community import louvain_partitions
+    except ImportError:
+        raise ImportError("You need networkx >= 3.2 for louvain_partitions.")
+
+    # Get the finest partition (last in the generator)
+    partitions = list(louvain_partitions(graph))
+    if not partitions:
+        raise ValueError("No partitions found by Louvain algorithm.")
+    finest_partition = partitions[-1]
+
+    # Assign community numbers
+    node_to_comm = {}
+    for comm_num, community in enumerate(finest_partition):
+        for node in community:
+            node_to_comm[node] = comm_num
+
+    nx.set_node_attributes(graph, node_to_comm, 'y')
+    return graph

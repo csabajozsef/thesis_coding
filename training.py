@@ -16,7 +16,8 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-from utils import params_to_string
+from utils import file_name_generator
+from utils import get_best_acc_from_models
 
 import os
 import time
@@ -60,11 +61,13 @@ def save_model(model: torch.nn.Module, filename: str) -> None:
         filename = f"model_{filename}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pth"
     torch.save(model.state_dict(), filename)
 
-def load_dataset(dataset = 'Cora'): 
-    dataset = 'Cora'
-    path = osp.join('.', 'training_data', 'datasets', dataset)
-    dataset = Planetoid(path, dataset)
+def load_dataset(dataset_str = 'Cora'): 
+    dataset_str = 'Cora'
+    path = osp.join('.', 'training_data', 'datasets', dataset_str)
+    dataset = Planetoid(path, dataset_str)
     data = dataset[0]
+    data.creation_function = "load_dataset_" + dataset_str
+    #dataset_name_str = str(getattr(data, 'creation_function', 'Unknown'))
     return dataset,data
 
 def set_loader_and_optimizer(model):
@@ -195,19 +198,29 @@ def model_training_n2v(model, model_init_params, data, loader, optimizer, num_ep
         epoch_times.append(epoch_duration)
 
         print(f'Epoch: {epoch:03d}, Loss: {avg_loss:.4f}, Acc: {acc:.4f}, Duration: {epoch_duration:.2f}s')
-
+        
         # Save the best model
+        # best_acc_from_models = get_best_acc_from_models()
+
+        # TODO: how to do the the checking to know if we need to save? create function to get it with same other data
+        # also generalize the p q comparison notebook, run it overnight?
+        # check name string of same params model to see if this is better
+        
         if acc > best_acc:
+            best_acc_str = f"_acc_{acc:.4f}"
+            dataset_name_str = str(getattr(data, 'creation_function', 'Unknown'))
+            print(f"Dataset name: {dataset_name_str}")
+            model_name = "node2vec"
+
             best_acc = acc
             
-            # Use deepcopy to ensure the state is saved correctly at this point
             best_model_state = copy.deepcopy(model.state_dict())
-            # Save init parameters to json
-            with open(model_save_path + params_to_string(model_init_params) + '.json', "w") as f:
+            #  model_save_path='./training_data/models/node2vec_'
+            with open(model_save_path + file_name_generator(model_init_params, model_name, dataset_name_str,best_acc_str) + '.json', "w") as f:
                 json.dump(model_init_params, f, indent=4)
             
             # Save the model state dictionary
-            torch.save(best_model_state, model_save_path + params_to_string(model_init_params) + '.pth')
+            torch.save(best_model_state, model_save_path + file_name_generator(model_init_params, model_name, dataset_name_str,best_acc_str) + '.pth')
             
             best_epoch = epoch
             print(f'    New best model saved with accuracy: {best_acc:.4f}')

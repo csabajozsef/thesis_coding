@@ -276,15 +276,19 @@ def graph_visualizer(G: nx.Graph, layout:str ="spring" "", save_to_file:bool= Fa
         node_labels = {node: G.nodes[node].get('y', '') for node in G.nodes}
         print("Node labels: ", node_labels)
         print("y attribute used for node labels")
+        # Set node color based on y label
+        y_values = [G.nodes[node].get('y', 0) for node in G.nodes]
+        # Use a colormap for better visualization
+        cmap = plt.cm.get_cmap('tab20', len(set(y_values)))
+        node_color = [cmap(y) for y in y_values]
     else:
         node_labels = {node: str(node) for node in G.nodes()}
+        node_color = "lightblue"
 
     plt.figure(figsize=(12, 12))
-    nx.draw_networkx_nodes(G, pos, node_size=700, node_color="lightblue")
+    nx.draw_networkx_nodes(G, pos, node_size=700, node_color=node_color)
     nx.draw_networkx_edges(G, pos, alpha=0.5)
-    # 
     nx.draw_networkx_labels(G, pos, labels=node_labels, font_size=10, font_color="black")
-
 
     plt.title("Graph") # TODO: generic title
     plt.axis("off")
