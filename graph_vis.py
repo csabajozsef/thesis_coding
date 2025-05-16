@@ -118,22 +118,23 @@ def print_graph_info_cluster(graph:nx.Graph|str, print_text:bool = False) -> Non
     '''
     This function performs graph analytics on the given graph. 
     '''
+    print("[INFO] Starting graph analytics")
     if isinstance(graph, str):
         assert graph.endswith(".gpickle"), "Graph file must be in .gpickle format"
         with open(graph, "rb") as f:
             G = pickle.load(graph)
         if print_text:
-            print(f"Graph loaded from {graph}")
+            print(f"[INFO] Graph loaded from {graph}")
     elif isinstance(graph, Data):
         # G = nx.from_pyg_data(graph)
-        print("lol")
+        print("[INFO] Graph is a PyTorch Geometric Data object, converting to NetworkX graph.")
         G = to_networkx(graph)
         if print_text:
-            print(f"Graph loaded from {graph}")
+            print(f"[INFO] Graph loaded from {graph}")
     elif isinstance(graph, nx.Graph):
         G = graph
         if print_text:
-            print(f"Graph loaded from {graph}")
+            print(f"[INFO] Graph loaded from {graph}")
     else:
         raise ValueError("Graph must be a networkx graph object or a file path to a .gpickle file")        
 

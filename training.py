@@ -62,7 +62,7 @@ def save_model(model: torch.nn.Module, filename: str) -> None:
     torch.save(model.state_dict(), filename)
 
 def load_dataset(dataset_str = 'Cora'): 
-    dataset_str = 'Cora'
+    dataset_str = dataset_str
     path = osp.join('.', 'training_data', 'datasets', dataset_str)
     dataset = Planetoid(path, dataset_str)
     data = dataset[0]
