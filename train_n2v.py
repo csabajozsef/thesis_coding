@@ -55,7 +55,7 @@ def train_node2vecs(data_list:list, num_training_epochs:int = 6, parameter_dicts
                 optimizer,
                 num_training_epochs,
                 device,
-                model_save_path='./training_data/models/' # Example save path
+                model_save_path='../training_data/models/' # Example save path
             )
     # TODO: return results? what is the right format? pictures for sure
 

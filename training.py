@@ -329,9 +329,9 @@ def create_parameters_dict(
     if base_params is None:
         base_params = {
             "embedding_dim": 128,
-            "walk_length": 70,
-            "context_size": 14,
-            "walks_per_node": 18,
+            "walk_length": 80,
+            "context_size": 10,
+            "walks_per_node": 10,
             "num_negative_samples": 1,
             "sparse": True
         }

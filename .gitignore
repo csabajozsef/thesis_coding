@@ -1,7 +1,11 @@
 .venv-thesis_coding-py3.13/
 .venv-thesis_coding-py3.10/
+.venv-pecanpy-py3.10/
 .ipynb_checkpoints/
 data/
 dataset/
 archive/
 graphs/
+extra_notebooks/
+plots/
+training_data/

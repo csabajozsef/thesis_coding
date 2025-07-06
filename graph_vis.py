@@ -13,6 +13,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import seaborn as sns
 from datetime import datetime
 
 import os
@@ -238,10 +239,21 @@ def pyg_graph_data_visualizer(data: Data|Dataset)->None:
 
         node_type_counts.plot(kind='bar', x='node_type', y='count', legend=False)
 
+        plt.xlabel('Csúcstípus')
+        plt.ylabel('Gyakoriság')
+        plt.title('Csúcstípusok gyakorisága')
+        plt.show()
+
+        # seaborn for better visualization
+        sns.set(style="whitegrid", font_scale=1.3)
+        plt.figure(figsize=(8, 5))
+        sns.barplot(data=node_type_counts, x='node_type', y='count', palette='tab10')
         plt.xlabel('Node Type')
         plt.ylabel('Count')
-        plt.title('Histogram of Node Types in graph')
+        plt.title('Histogram of Node Types in Graph')
+        plt.tight_layout()
         plt.show()
+
     else:
         print("No node type information available for histogram.")
     # Calculate node degrees
@@ -249,7 +261,7 @@ def pyg_graph_data_visualizer(data: Data|Dataset)->None:
 
     # Create a histogram for node degree distribution
     plt.figure(figsize=(8, 6))
-    plt.hist(degrees, bins=30, color='skyblue', edgecolor='black')
+    plt.hist(degrees, bins=30, color='green', edgecolor='black')
     plt.xlabel('Node Degree')
     plt.ylabel('Frequency')
     plt.title('Node Degree Distribution')
